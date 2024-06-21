@@ -12,6 +12,8 @@ import Mooc.Todo
 import Data.Char
 import Data.Either
 import Data.List
+import Data.IntMap (update, dropWhileAntitone)
+import Control.Arrow (ArrowChoice(right))
 
 ------------------------------------------------------------------------------
 -- Ex 1: implement the function maxBy that takes as argument a
@@ -185,7 +187,7 @@ bomb x = Right (x-1)
 ------------------------------------------------------------------------------
 -- Ex 9: given a list of strings and a length, return all strings that
 --  * have the given length
---  * are made by catenating two input strings
+--  * are made by concatenating two input strings
 --
 -- Examples:
 --   joinToLength 2 ["a","b","cd"]        ==> ["aa","ab","ba","bb"]
@@ -194,7 +196,7 @@ bomb x = Right (x-1)
 -- Hint! This is a great use for list comprehensions
 
 joinToLength :: Int -> [String] -> [String]
-joinToLength = todo
+joinToLength n ls = [first ++ last | first <- ls, last <- ls, length (first ++ last) == n]
 
 ------------------------------------------------------------------------------
 -- Ex 10: implement the operator +|+ that returns a list with the first
@@ -208,6 +210,8 @@ joinToLength = todo
 --   [] +|+ [True]        ==> [True]
 --   [] +|+ []            ==> []
 
+(+|+) :: [a] -> [a] -> [a]
+xs +|+ ys = take 1 xs ++ take 1 ys
 
 ------------------------------------------------------------------------------
 -- Ex 11: remember the lectureParticipants example from Lecture 2? We
@@ -224,7 +228,7 @@ joinToLength = todo
 --   sumRights [Left "bad!", Left "missing"]         ==>  0
 
 sumRights :: [Either a Int] -> Int
-sumRights = todo
+sumRights lectureParticipants = sum (map (fromRight 0) lectureParticipants)
 
 ------------------------------------------------------------------------------
 -- Ex 12: recall the binary function composition operation
@@ -240,7 +244,8 @@ sumRights = todo
 --   multiCompose [(3*), (2^), (+1)] 0 ==> 6
 --   multiCompose [(+1), (2^), (3*)] 0 ==> 2
 
-multiCompose fs = todo
+multiCompose :: [b -> b] -> b -> b
+multiCompose fs a = foldr (.) id fs a
 
 ------------------------------------------------------------------------------
 -- Ex 13: let's consider another way to compose multiple functions. Given
@@ -261,7 +266,8 @@ multiCompose fs = todo
 --   multiApp id [head, (!!2), last] "axbxc" ==> ['a','b','c'] i.e. "abc"
 --   multiApp sum [head, (!!2), last] [1,9,2,9,3] ==> 6
 
-multiApp = todo
+multiApp :: ([b] -> c) -> [a -> b] -> a -> c
+multiApp f gs x = f (map ($ x) gs)
 
 ------------------------------------------------------------------------------
 -- Ex 14: in this exercise you get to implement an interpreter for a
@@ -296,4 +302,15 @@ multiApp = todo
 -- function, the surprise won't work. See section 3.8 in the material.
 
 interpreter :: [String] -> [String]
-interpreter commands = todo
+interpreter commands = helper commands 0 0 []
+  where
+    helper [] _ _ output = reverse output
+    helper (command:rest) x y output
+      | command == "up" = helper rest x (y + 1) output
+      | command == "down" = helper rest x (y - 1) output
+      | command == "left" = helper rest (x - 1) y output
+      | command == "right" = helper rest (x + 1) y output
+      | command == "printX" = helper rest x y (show x : output)
+      | command == "printY" = helper rest x y (show y : output)
+      | otherwise = helper rest x y output
+
